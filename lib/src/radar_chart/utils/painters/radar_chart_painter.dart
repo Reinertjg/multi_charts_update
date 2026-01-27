@@ -1,21 +1,22 @@
 import 'dart:math' show cos, min, pi, sin;
 
 import 'package:flutter/material.dart';
-import 'package:multi_charts/src/common/common_paint_utils.dart';
-import 'package:multi_charts/src/radar_chart/utils/radar_chart_draw_utils.dart';
+
+import '../../../common/common_paint_utils.dart';
+import '../../radar_chart.dart';
+import '../radar_chart_draw_utils.dart';
 
 /// Custom Painter class for drawing the chart. Depends on various parameters like
-/// [RadarChart.values], [RadarChart.labels], [RadarChart.maxValue], [RadarChart.fillColor],
-/// [RadarChart.strokeColor], [RadarChart.legendTextColor], [RadarChart.textScaleFactor], [RadarChart.labelWidth],
-/// [RadarChart.maxLinesForLabels], [RadarChart.chartRadiusFactor].
+/// [RadarChartGraphic.values], [RadarChartGraphic.labels], [RadarChartGraphic.maxValue], [RadarChartGraphic.fillColor],
+/// [RadarChartGraphic.strokeColor], [RadarChartGraphic.legendTextColor], [RadarChartGraphic.textScaleFactor], [RadarChartGraphic.labelWidth],
+/// [RadarChartGraphic.maxLinesForLabels], [RadarChartGraphic.chartRadiusFactor].
 ///
 /// It also has [dataAnimationPercent] and [outlineAnimationPercent] which defines the
 /// animation of the chart data and outlines.
 class RadarChartPainter extends CustomPainter {
-  final List<double> values;
+  final List<DataSet> dataSets;
   final List<String>? labels;
   final double maxValue;
-  final Color fillColor;
   final Color strokeColor;
   final Color labelColor;
   final double textScaleFactor;
@@ -26,10 +27,9 @@ class RadarChartPainter extends CustomPainter {
   final double chartRadiusFactor;
 
   RadarChartPainter(
-      this.values,
+      this.dataSets,
       this.labels,
       this.maxValue,
-      this.fillColor,
       this.strokeColor,
       this.labelColor,
       this.textScaleFactor,
@@ -42,8 +42,53 @@ class RadarChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     Offset center = Offset(size.width / 2.0, size.height / 2.0);
-    double angle = (2 * pi) / values.length;
+    double angle = (2 * pi) / dataSets[0].values.length;
+
+    for (var dataSet in dataSets) {
+      var valuePoints = <Offset>[];
+      valuePoints = calcValuePoints(dataSet.values, center, angle);
+
+      var outerPoints = RadarChartDrawUtils.drawChartOutline(
+          canvas,
+          center,
+          angle,
+          strokeColor,
+          maxValue,
+          dataSet.values.length,
+          outlineAnimationPercent,
+          (min(center.dx, center.dy) * chartRadiusFactor));
+      RadarChartDrawUtils.drawFillPaintGraphData(
+          canvas, valuePoints, dataSet.fillColor);
+      RadarChartDrawUtils.drawLabels(
+          canvas,
+          center,
+          labels ?? dataSet.values.map((v) => v.toString()).toList(),
+          outerPoints,
+          CommonPaintUtils.getTextSize(size, textScaleFactor),
+          labelWidth ??
+              CommonPaintUtils.getDefaultLabelWidth(size, center, angle),
+          maxLinesForLabels ?? CommonPaintUtils.getDefaultMaxLinesForLabels(size),
+          labelColor);
+    }
+
+    for (var dataSet in dataSets) {
+      var valuePoints = <Offset>[];
+      valuePoints = calcValuePoints(dataSet.values, center, angle);
+
+      RadarChartDrawUtils.drawStrokePaintGraphData(
+          canvas, valuePoints, dataSet.tickColor);
+    }
+
+  }
+
+  @override
+  bool shouldRepaint(RadarChartPainter oldDelegate) {
+    return oldDelegate.dataAnimationPercent != dataAnimationPercent;
+  }
+
+  List<Offset> calcValuePoints (List<double> values,  Offset center, double angle) {
     var valuePoints = <Offset>[];
+
     for (var i = 0; i < values.length; i++) {
       var radius = (values[i] / maxValue) *
           (min(center.dx, center.dy) * chartRadiusFactor);
@@ -53,30 +98,6 @@ class RadarChartPainter extends CustomPainter {
       valuePoints.add(Offset(x, y) + center);
     }
 
-    var outerPoints = RadarChartDrawUtils.drawChartOutline(
-        canvas,
-        center,
-        angle,
-        strokeColor,
-        maxValue,
-        values.length,
-        outlineAnimationPercent,
-        (min(center.dx, center.dy) * chartRadiusFactor));
-    RadarChartDrawUtils.drawGraphData(canvas, valuePoints, fillColor, strokeColor);
-    RadarChartDrawUtils.drawLabels(
-        canvas,
-        center,
-        labels ?? values.map((v) => v.toString()).toList(),
-        outerPoints,
-        CommonPaintUtils.getTextSize(size, textScaleFactor),
-        labelWidth ??
-            CommonPaintUtils.getDefaultLabelWidth(size, center, angle),
-        maxLinesForLabels ?? CommonPaintUtils.getDefaultMaxLinesForLabels(size),
-        labelColor);
-  }
-
-  @override
-  bool shouldRepaint(RadarChartPainter oldDelegate) {
-    return oldDelegate.dataAnimationPercent != dataAnimationPercent;
+    return valuePoints;
   }
 }

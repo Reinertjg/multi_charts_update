@@ -1,5 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:multi_charts/src/radar_chart/utils/painters/radar_chart_painter.dart';
+
+import 'utils/painters/radar_chart_painter.dart';
+
+class DataSet {
+  DataSet(
+      {required this.fillColor, required this.tickColor, required this.values});
+
+  final Color fillColor;
+  final Color tickColor;
+  List<double> values;
+}
 
 /// A chart type which plots the values in the form of a spider web or radar.
 ///
@@ -46,9 +56,9 @@ import 'package:multi_charts/src/radar_chart/utils/painters/radar_chart_painter.
 ///
 /// [chartRadiusFactor] defines the factor by which the chart radius increases with respect
 /// to width or height (whatever is minimum). If not provided, defaults to `0.8 (80%)`.
-class RadarChart extends StatefulWidget {
+class RadarChartGraphic extends StatefulWidget {
   /// Data points of the graph
-  final List<double> values;
+  final List<DataSet> dataSets;
 
   /// Provides naming for the data points
   ///
@@ -67,11 +77,6 @@ class RadarChart extends StatefulWidget {
   /// The canvas area defaults to [Size.infinite] and is constrained by
   /// the parent widget.
   final Size size;
-
-  /// Defines the background color of the plotted graph
-  ///
-  /// If not provided, it defaults to [Colors.black26].
-  final Color fillColor;
 
   /// Defines the color of the chart outlines
   ///
@@ -116,7 +121,12 @@ class RadarChart extends StatefulWidget {
   /// It is the animation toggle
   ///
   /// If true, the chart will animate, else not. It is `true` by default.
-  final bool animate;
+  final bool dataAnimation;
+
+  /// It is the animation toggle
+  ///
+  /// If true, the chart will animate, else not. It is `true` by default.
+  final bool outlineAnimation;
 
   /// Defines the duration of the animation for the graph.
   ///
@@ -158,30 +168,30 @@ class RadarChart extends StatefulWidget {
   ///   chartRadiusFactor: 0.7,
   /// )
   /// ```
-  RadarChart(
+  RadarChartGraphic(
       {Key? key,
-      required this.values,
-      this.labels,
-      required this.maxValue,
-      this.size = Size.infinite,
-      this.fillColor = Colors.black26,
-      this.strokeColor = Colors.black87,
-      this.labelColor = Colors.black,
-      this.maxWidth = 200,
-      this.maxHeight = 200,
-      this.textScaleFactor = 0.04,
-      this.labelWidth,
-      this.maxLinesForLabels,
-      this.animate = true,
-      this.animationDuration = const Duration(milliseconds: 1500),
-      this.curve = Curves.easeIn,
-      this.chartRadiusFactor = 0.8});
+        required this.dataSets,
+        this.labels,
+        required this.maxValue,
+        this.size = Size.infinite,
+        this.strokeColor = Colors.black87,
+        this.labelColor = Colors.black,
+        this.maxWidth = 200,
+        this.maxHeight = 200,
+        this.textScaleFactor = 0.04,
+        this.labelWidth,
+        this.maxLinesForLabels,
+        this.dataAnimation = true,
+        this.outlineAnimation = true,
+        this.animationDuration = const Duration(milliseconds: 1500),
+        this.curve = Curves.easeIn,
+        this.chartRadiusFactor = 0.8});
 
   @override
-  _RadarChartState createState() => _RadarChartState();
+  _RadarChartGraphicState createState() => _RadarChartGraphicState();
 }
 
-class _RadarChartState extends State<RadarChart> with TickerProviderStateMixin {
+class _RadarChartGraphicState extends State<RadarChartGraphic> with TickerProviderStateMixin {
   late AnimationController _dataAnimationController;
   late Animation<double> _dataAnimation;
   late AnimationController _outlineAnimationController;
@@ -193,24 +203,27 @@ class _RadarChartState extends State<RadarChart> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    if (widget.values.any((value) => value > widget.maxValue)) {
-      throw ArgumentError("All values of graph should be less than maxValue");
+    for (var dataSet in widget.dataSets) {
+      if (dataSet.values.any((value) => value > widget.maxValue)) {
+        throw ArgumentError("All values of graph should be less than maxValue");
+      }
+      if (dataSet.values.length < 3) {
+        throw ArgumentError("Minimum 3 values are required for Radar chart");
+      }
+      if (widget.labels != null &&
+          dataSet.values.length != widget.labels!.length) {
+        throw ArgumentError("values and labels should have same size");
+      }
     }
-    if (widget.values.length < 3) {
-      throw ArgumentError("Minimum 3 values are required for Radar chart");
-    }
-    if (widget.labels != null &&
-        widget.values.length != widget.labels!.length) {
-      throw ArgumentError("values and labels should have same size");
-    }
+
     _dataAnimationController = AnimationController(
         vsync: this,
-        duration: widget.animate
+        duration: widget.dataAnimation || widget.outlineAnimation
             ? widget.animationDuration
             : Duration(milliseconds: 1))
       ..forward();
     _outlineAnimationController = AnimationController(
-        vsync: this, duration: Duration(milliseconds: widget.animate ? 500 : 1))
+        vsync: this, duration: Duration(milliseconds: widget.dataAnimation || widget.outlineAnimation ? 500 : 1))
       ..forward();
     curve =
         CurvedAnimation(parent: _dataAnimationController, curve: widget.curve);
@@ -224,53 +237,56 @@ class _RadarChartState extends State<RadarChart> with TickerProviderStateMixin {
   }
 
   @override
-  void didUpdateWidget(RadarChart oldWidget) {
+  void didUpdateWidget(RadarChartGraphic oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.values.any((value) => value > widget.maxValue)) {
-      _dataAnimationController.reset();
-      _outlineAnimationController.reset();
-      throw ArgumentError("All values of graph should be less than maxValue");
-    } else if (widget.values.length < 3) {
-      throw ArgumentError("Minimum 3 values are required for Radar chart");
-    } else if (widget.labels != null &&
-        widget.values.length != widget.labels!.length) {
-      throw ArgumentError("values and labels should have same size");
-    } else if (widget.animate) {
-      if (oldWidget.animationDuration != widget.animationDuration) {
-        _dataAnimationController.duration = widget.animationDuration;
-        _outlineAnimationController.duration = Duration(milliseconds: 500);
+    for (var dataSet in widget.dataSets) {
+      if (dataSet.values.any((value) => value > widget.maxValue)) {
+        _dataAnimationController.reset();
+        _outlineAnimationController.reset();
+        throw ArgumentError("All values of graph should be less than maxValue");
+      } else if (dataSet.values.length < 3) {
+        throw ArgumentError("Minimum 3 values are required for Radar chart");
+      } else if (widget.labels != null &&
+          dataSet.values.length != widget.labels!.length) {
+        throw ArgumentError("values and labels should have same size");
+      } else if (widget.dataAnimation || widget.outlineAnimation) {
+        if (oldWidget.animationDuration != widget.animationDuration) {
+          _dataAnimationController.duration = widget.animationDuration;
+          _outlineAnimationController.duration = Duration(milliseconds: 500);
+        }
+        if (oldWidget.curve != widget.curve) {
+          curve = CurvedAnimation(
+              parent: _dataAnimationController, curve: widget.curve);
+        }
+        setState(() {
+          _dataAnimationController
+            ..reset()
+            ..forward();
+          _outlineAnimationController
+            ..reset()
+            ..forward();
+        });
       }
-      if (oldWidget.curve != widget.curve) {
-        curve = CurvedAnimation(
-            parent: _dataAnimationController, curve: widget.curve);
-      }
-      setState(() {
-        _dataAnimationController
-          ..reset()
-          ..forward();
-        _outlineAnimationController
-          ..reset()
-          ..forward();
-      });
     }
+
   }
 
   @override
   Widget build(BuildContext context) {
     _dataAnimation =
-        Tween(begin: 0.0, end: 1.0).animate(curve as Animation<double>)
-          ..addListener(() {
-            setState(() {
-              dataAnimationPercent = _dataAnimation.value;
-            });
-          });
+    Tween(begin: 0.0, end: 1.0).animate(curve as Animation<double>)
+      ..addListener(() {
+        setState(() {
+          dataAnimationPercent = _dataAnimation.value;
+        });
+      });
     _outlineAnimation =
-        Tween(begin: 0.0, end: 1.0).animate(_outlineAnimationController)
-          ..addListener(() {
-            setState(() {
-              outlineAnimationPercent = _outlineAnimation.value;
-            });
-          });
+    Tween(begin: 0.0, end: 1.0).animate(_outlineAnimationController)
+      ..addListener(() {
+        setState(() {
+          outlineAnimationPercent = _outlineAnimation.value;
+        });
+      });
     return LimitedBox(
       maxWidth: widget.maxWidth,
       maxHeight: widget.maxHeight,
@@ -278,17 +294,16 @@ class _RadarChartState extends State<RadarChart> with TickerProviderStateMixin {
         padding: const EdgeInsets.all(8.0),
         child: CustomPaint(
           painter: RadarChartPainter(
-              widget.values,
+              widget.dataSets,
               widget.labels,
               widget.maxValue,
-              widget.fillColor,
               widget.strokeColor,
               widget.labelColor,
               widget.textScaleFactor,
               widget.labelWidth,
               widget.maxLinesForLabels,
-              widget.animate ? dataAnimationPercent : 1.0,
-              widget.animate ? outlineAnimationPercent : 1.0,
+              widget.dataAnimation ? dataAnimationPercent : 1.0,
+              widget.outlineAnimation ? outlineAnimationPercent : 1.0,
               widget.chartRadiusFactor),
           size: widget.size,
         ),

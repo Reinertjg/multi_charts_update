@@ -2,7 +2,9 @@ import 'dart:math' show cos, pi, sin;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:multi_charts/src/common/common_paint_utils.dart';
+
+import '../../common/common_paint_utils.dart';
+
 
 /// Helper class to draw the different radar chart elements.
 class RadarChartDrawUtils {
@@ -132,11 +134,34 @@ class RadarChartDrawUtils {
   /// Draws the graph data for all the value points with the background color defined by
   /// [RadarChart.fillColor].
   static void drawGraphData(Canvas canvas, List<Offset> valuePoints,
-      Color fillColor, Color strokeColor) {
-    Path valuePath = Path()..addPolygon(valuePoints, true);
+      Color fillColor, Color tickColor) {
+    final Path valuePath = Path()..addPolygon(valuePoints, true);
+
     canvas.drawPath(
-        valuePath, CommonPaintUtils.getFillPaint(fillColor, alpha: 50));
+      valuePath,
+      CommonPaintUtils.getFillPaint(fillColor, alpha: 100),
+    );
+
     canvas.drawPath(
-        valuePath, CommonPaintUtils.getStrokePaint(fillColor, 200, 1.5));
+      valuePath,
+      CommonPaintUtils.getStrokePaint(tickColor, 255, 1.75),
+    );
+  }
+
+  static void drawStrokePaintGraphData(Canvas canvas, List<Offset> valuePoints, Color tickColor) {
+    final Path valuePath = Path()..addPolygon(valuePoints, true);
+
+    canvas.drawPath(
+      valuePath,
+      CommonPaintUtils.getStrokePaint(tickColor, 255, 1.75),
+    );
+  }
+  static void drawFillPaintGraphData(Canvas canvas, List<Offset> valuePoints, Color fillColor) {
+    final Path valuePath = Path()..addPolygon(valuePoints, true);
+
+    canvas.drawPath(
+      valuePath,
+      CommonPaintUtils.getFillPaint(fillColor, alpha: 100),
+    );
   }
 }
