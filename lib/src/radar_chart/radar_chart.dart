@@ -181,8 +181,8 @@ class RadarChartGraphic extends StatefulWidget {
         this.textScaleFactor = 0.04,
         this.labelWidth,
         this.maxLinesForLabels,
-        this.dataAnimation = true,
-        this.outlineAnimation = true,
+        this.dataAnimation = false,
+        this.outlineAnimation = false,
         this.animationDuration = const Duration(milliseconds: 1500),
         this.curve = Curves.easeIn,
         this.chartRadiusFactor = 0.8});
