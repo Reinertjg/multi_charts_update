@@ -19,6 +19,7 @@ class RadarChartPainter extends CustomPainter {
   final double maxValue;
   final Color strokeColor;
   final Color labelColor;
+  final TextStyle labelStyle;
   final double textScaleFactor;
   final double? labelWidth;
   final int? maxLinesForLabels;
@@ -32,6 +33,7 @@ class RadarChartPainter extends CustomPainter {
       this.maxValue,
       this.strokeColor,
       this.labelColor,
+      this.labelStyle,
       this.textScaleFactor,
       this.labelWidth,
       this.maxLinesForLabels,
@@ -68,7 +70,9 @@ class RadarChartPainter extends CustomPainter {
           labelWidth ??
               CommonPaintUtils.getDefaultLabelWidth(size, center, angle),
           maxLinesForLabels ?? CommonPaintUtils.getDefaultMaxLinesForLabels(size),
-          labelColor);
+          labelColor,
+          labelStyle,
+      );
     }
 
     for (var dataSet in dataSets) {
