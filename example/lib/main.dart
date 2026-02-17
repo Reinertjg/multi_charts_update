@@ -32,10 +32,10 @@ class _RadarChartTestPageState extends State<RadarChartTestPage> {
   int radarTrigger = 0;
 
   /// Current chart values (must have at least 3 points).
-  List<double> values = const [1, 2, 4, 7, 9, 0, 6];
+  List<double> values = const [1, 2, 3, 3, 3, 2, 3, 3, 1];
 
   /// A second dataset to switch to, so we can visually confirm updates.
-  static const List<double> _altValues = [5, 6, 7, 8, 0, 3, 3];
+  static const List<double> _altValues = [3, 2, 1, 3, 1, 2, 3, 3, 3];
 
   /// Triggers a single animation pulse AND updates the chart data.
   /// Note: using two separate setState calls is unnecessary; we update both at once.
@@ -45,7 +45,7 @@ class _RadarChartTestPageState extends State<RadarChartTestPage> {
 
       // Toggle between two value sets to confirm the chart is actually updating.
       final isUsingAlt = _listEquals(values, _altValues);
-      values = isUsingAlt ? const [1, 2, 4, 7, 9, 0, 6] : _altValues;
+      values = isUsingAlt ? const [1, 2, 3, 3, 1, 2, 3, 3, 3] : _altValues;
 
       rebuildCounter++;
     });
@@ -61,7 +61,7 @@ class _RadarChartTestPageState extends State<RadarChartTestPage> {
   void reset() {
     setState(() {
       radarTrigger = 0;
-      values = const [1, 2, 4, 7, 9, 0, 6];
+      values = const [1, 2, 3, 3, 1, 2, 3, 3, 3];
       rebuildCounter = 0;
     });
   }
@@ -138,9 +138,11 @@ class _RadarChartTestPageState extends State<RadarChartTestPage> {
                     'Label5',
                     'Label6',
                     'Label7',
+                    'Label8',
+                    'Label9',
                   ],
                   labelStyle: const TextStyle(fontSize: 14),
-                  maxValue: 10,
+                  maxValue: 3,
                   chartRadiusFactor: 0.7,
 
                   /// ✅ Trigger-based animation: only animates when this integer changes.

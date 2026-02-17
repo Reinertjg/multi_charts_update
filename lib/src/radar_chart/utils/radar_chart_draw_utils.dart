@@ -106,31 +106,75 @@ class RadarChartDrawUtils {
       double maxValue,
       int noOfPoints,
       double animationPercent,
-      double chartRadius) {
-    var boundaryPoints = <Offset>[];
-    var outerPoints = <Offset>[];
-    for (var i = 0; i < maxValue; i += maxValue ~/ 5) {
+      double chartRadius,
+      ) {
+    // Prevents division by zero and invalid drawing
+    if (maxValue <= 0) return <Offset>[];
+
+    final int rings = maxValue.clamp(1, 10).floor();
+
+    final boundaryPoints = <Offset>[];
+    final outerPoints = <Offset>[];
+
+    // Iterates through each ring of the radar chart
+    for (int ring = 0; ring <= rings; ring++) {
       boundaryPoints.clear();
-      for (var j = 0; j < noOfPoints; j++) {
-        var x = animationPercent * chartRadius * cos(angle * j - pi / 2);
-        var y = animationPercent * chartRadius * sin(angle * j - pi / 2);
-        x -= x * i / maxValue;
-        y -= y * i / maxValue;
-        boundaryPoints.add(Offset(x, y) + center);
-        if (i == 0) {
-          outerPoints.add(boundaryPoints[j]);
-        }
-        canvas.drawLine(center, boundaryPoints[j],
-            CommonPaintUtils.getStrokePaint(strokeColor, 150, 0.3));
+
+      // Calculates the radial scale for the current ring
+      // ring = 0 represents the outermost ring
+      // ring = rings represents the innermost ring
+      final double progress = ring / rings;
+      final double scale = 1.0 - progress;
+
+      // Iterates through each axis (point) of the radar
+      for (int pointIndex = 0; pointIndex < noOfPoints; pointIndex++) {
+        // Computes X and Y coordinates based on angle and scale
+        final double x = animationPercent *
+            chartRadius *
+            scale *
+            cos(angle * pointIndex - pi / 2);
+
+        final double y = animationPercent *
+            chartRadius *
+            scale *
+            sin(angle * pointIndex - pi / 2);
+
+        final Offset point = Offset(x, y) + center;
+        boundaryPoints.add(point);
+
+        // Stores the outermost ring points for label positioning
+        if (ring == 0) outerPoints.add(point);
+
+        // Draws radial lines from the center to each point
+        canvas.drawLine(
+          center,
+          point,
+          CommonPaintUtils.getStrokePaint(strokeColor, 150, 0.3),
+        );
       }
-      boundaryPoints.add(boundaryPoints[0]);
-      canvas.drawPoints(PointMode.polygon, boundaryPoints,
-          CommonPaintUtils.getStrokePaint(strokeColor, 150, 0.8));
+
+      // Closes the polygon by connecting the last point to the first
+      boundaryPoints.add(boundaryPoints.first);
+
+      // Draws the polygon outline for the current ring
+      canvas.drawPoints(
+        PointMode.polygon,
+        boundaryPoints,
+        CommonPaintUtils.getStrokePaint(strokeColor, 150, 0.8),
+      );
     }
+
+    // Draws the center dot of the radar chart
     canvas.drawCircle(
-        center, 2.0, CommonPaintUtils.getFillPaint(strokeColor, alpha: 50));
+      center,
+      2.0,
+      CommonPaintUtils.getFillPaint(strokeColor, alpha: 50),
+    );
+
     return outerPoints;
   }
+
+
 
   /// Draws the graph data for all the value points with the background color defined by
   /// [RadarChart.fillColor].
