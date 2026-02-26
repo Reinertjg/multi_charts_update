@@ -1,4 +1,4 @@
-import 'dart:math' show cos, min, pi, sin;
+import 'dart:math' show cos, min, pi, sin, max;
 
 import 'package:flutter/material.dart';
 
@@ -43,8 +43,19 @@ class RadarChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    Offset center = Offset(size.width / 2.0, size.height / 2.0);
-    double angle = (2 * pi) / dataSets[0].values.length;
+    const startAngle = -pi / 2;
+    final points = dataSets[0].values.length;
+    final angle = (2 * pi) / points;
+
+    final radius = fitRadius(size, 8.0) * chartRadiusFactor;
+    final baseCenter = Offset(size.width / 2, size.height / 2);
+    final center = centerPolygon(
+      baseCenter: baseCenter,
+      radius: radius,
+      points: points,
+      angle: angle,
+      startAngle: startAngle,
+    );
 
     for (var dataSet in dataSets) {
       var valuePoints = <Offset>[];
@@ -105,3 +116,34 @@ class RadarChartPainter extends CustomPainter {
     return valuePoints;
   }
 }
+
+double fitRadius(Size size, double padding) {
+  final halfW = size.width / 2 - padding;
+  final halfH = size.height / 2 - padding;
+  return min(halfW, halfH);
+}
+
+Offset centerPolygon({
+  required Offset baseCenter,
+  required double radius,
+  required int points,
+  required double angle,
+  required double startAngle,
+}) {
+  double minSin = double.infinity, maxSin = -double.infinity;
+  double minCos = double.infinity, maxCos = -double.infinity;
+
+  for (int i = 0; i < points; i++) {
+    final a = angle * i + startAngle;
+    final s = sin(a);
+    final c = cos(a);
+    minSin = min(minSin, s); maxSin = max(maxSin, s);
+    minCos = min(minCos, c); maxCos = max(maxCos, c);
+  }
+
+  final dx = -((maxCos + minCos) / 2) * radius;
+  final dy = -((maxSin + minSin) / 2) * radius;
+
+  return baseCenter.translate(dx, dy);
+}
+

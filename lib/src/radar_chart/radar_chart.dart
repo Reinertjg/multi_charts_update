@@ -75,7 +75,7 @@ class RadarChartGraphic extends StatefulWidget {
     this.animationDuration = const Duration(milliseconds: 1500),
     this.curve = Curves.easeIn,
     this.animationTrigger = 0,
-    this.chartRadiusFactor = 0.8,
+    this.chartRadiusFactor = 1.0,
   }) : super(key: key);
 
   /// Datasets to be plotted on the chart.
@@ -300,25 +300,22 @@ class _RadarChartGraphicState extends State<RadarChartGraphic>
     return LimitedBox(
       maxWidth: widget.maxWidth,
       maxHeight: widget.maxHeight,
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: CustomPaint(
-          painter: RadarChartPainter(
-            widget.dataSets,
-            widget.labels,
-            widget.maxValue,
-            widget.strokeColor,
-            widget.labelColor,
-            widget.labelStyle,
-            widget.textScaleFactor,
-            widget.labelWidth,
-            widget.maxLinesForLabels,
-            widget.dataAnimation ? dataAnimationPercent : 1.0,
-            widget.outlineAnimation ? outlineAnimationPercent : 1.0,
-            widget.chartRadiusFactor,
-          ),
-          size: widget.size,
+      child: CustomPaint(
+        painter: RadarChartPainter(
+          widget.dataSets,
+          widget.labels,
+          widget.maxValue,
+          widget.strokeColor,
+          widget.labelColor,
+          widget.labelStyle,
+          widget.textScaleFactor,
+          widget.labelWidth,
+          widget.maxLinesForLabels,
+          widget.dataAnimation ? dataAnimationPercent : 1.0,
+          widget.outlineAnimation ? outlineAnimationPercent : 1.0,
+          widget.chartRadiusFactor,
         ),
+        size: widget.size,
       ),
     );
   }
